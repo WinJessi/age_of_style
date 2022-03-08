@@ -5,6 +5,8 @@ class ContestantEntity {
   final String photo;
   final String name;
   final String description;
+  final String category;
+  final String subcategory;
 
   ContestantEntity({
     required this.id,
@@ -13,5 +15,7 @@ class ContestantEntity {
     required this.photo,
     required this.name,
     required this.description,
+    required this.category,
+    required this.subcategory,
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:age_of_style/core/failure/failure.dart';
 import 'package:age_of_style/core/usecases/usecases.dart';
 import 'package:age_of_style/features/data/model/category_model.dart';
@@ -7,6 +9,7 @@ import 'package:age_of_style/features/domain/usecases/get_category.dart';
 import 'package:age_of_style/features/domain/usecases/get_contestants.dart';
 import 'package:age_of_style/features/domain/usecases/get_sub.dart';
 import 'package:age_of_style/features/domain/usecases/init_payment.dart';
+import 'package:age_of_style/features/domain/usecases/save_voters.dart';
 import 'package:age_of_style/features/domain/usecases/settings.dart';
 import 'package:age_of_style/features/domain/usecases/verify_payment.dart';
 import 'package:age_of_style/features/domain/usecases/vote.dart';
@@ -23,6 +26,7 @@ class MyNotifier with ChangeNotifier {
     required this.voteUsecase,
     required this.initPaymentUsecase,
     required this.verifyPaymentUsecase,
+    required this.saveVotersUsecase,
   });
 
   final GetCategoryUsecase categoryUsecase;
@@ -32,6 +36,7 @@ class MyNotifier with ChangeNotifier {
   final SettingsUsecase settingsUsecase;
   final InitPaymentUsecase initPaymentUsecase;
   final VerifyPaymentUsecase verifyPaymentUsecase;
+  final SaveVotersUsecase saveVotersUsecase;
 
   var _current = 0;
 
@@ -270,14 +275,22 @@ class MyNotifier with ChangeNotifier {
   Future<Either<String, Map<String, dynamic>>> initPayemnt(int amount) async {
     var _data = {
       'amount': '${(20 * amount * 100)}',
-      'email': 'robor.eminokanju@gmail.com',
+      'email': '${getRandomString(12)}@gmail.com',
     };
 
     var res = await initPaymentUsecase.call(_data);
 
     return res.fold(
       (l) => Left(FailureToString.mapFailureToMessage(l)),
-      (r) {
+      (r) async {
+        print(r);
+
+        await saveVotersUsecase.call({
+          'reference': r['reference'],
+          'voted': _selectedContestant.last.id,
+          'how_many': '$amount',
+        });
+
         _response = r;
 
         notifyListeners();
@@ -316,3 +329,9 @@ class MyNotifier with ChangeNotifier {
     notifyListeners();
   }
 }
+
+const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+final Random _rnd = Random();
+
+String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
+    length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));

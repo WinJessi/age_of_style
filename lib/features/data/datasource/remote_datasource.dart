@@ -13,6 +13,7 @@ abstract class RemoteDatasource {
 
   Future<Map<String, dynamic>> initPayment(Map<String, dynamic> map);
   Future<Map<String, dynamic>> verifyPayment(String ref);
+  Future<Map> saveVoter(Map map);
 }
 
 class RemoteDatasourceImpl extends RemoteDatasource {
@@ -66,6 +67,8 @@ class RemoteDatasourceImpl extends RemoteDatasource {
       'Content-Type': 'application/json',
     };
 
+    map.putIfAbsent('subaccount', () => 'ACCT_w6qljw3ahdh1eyh');
+
     var request = await http.post(
       Uri.parse('https://api.paystack.co/transaction/initialize'),
       body: json.encode(map),
@@ -84,6 +87,13 @@ class RemoteDatasourceImpl extends RemoteDatasource {
         'Authorization': 'Bearer $kSECRET',
       }),
     );
+
+    return response.data;
+  }
+
+  @override
+  Future<Map> saveVoter(Map map) async {
+    var response = await dio.post('$kURL/voters/save', data: map);
 
     return response.data;
   }

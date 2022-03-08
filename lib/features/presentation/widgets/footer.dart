@@ -128,14 +128,14 @@ class MyFooter extends StatelessWidget {
           ],
         ),
         const Spacer(),
-        IconButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => value.onToggleSearch(),
-          icon: const Icon(
-            Icons.search,
-            color: Colors.white,
-          ),
-        ),
+        // IconButton(
+        //   padding: EdgeInsets.zero,
+        //   onPressed: () => value.onToggleSearch(),
+        //   icon: const Icon(
+        //     Icons.search,
+        //     color: Colors.white,
+        //   ),
+        // ),
       ],
     );
   }
@@ -161,7 +161,7 @@ class ContestantTile extends StatelessWidget {
           (value) => showDialog(
             context: context,
             builder: (context) => PlaceVote(context: context),
-          ).then((_) => prov.resetCount()),
+          ),
         );
       },
       child: SizedBox(

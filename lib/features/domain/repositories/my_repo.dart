@@ -16,4 +16,5 @@ abstract class MyRepository {
     Map<String, dynamic> map,
   );
   Future<Either<Failure, bool>> verifyPayment(String ref);
+  Future<void> saveVoter(Map map);
 }

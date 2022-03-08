@@ -8,6 +8,8 @@ class ContestantModel extends ContestantEntity {
     required String photo,
     required String name,
     required String description,
+    required String category,
+    required String subcategory,
   }) : super(
           id: id,
           categoryID: categoryID,
@@ -15,17 +17,20 @@ class ContestantModel extends ContestantEntity {
           photo: photo,
           name: name,
           description: description,
+          category: category,
+          subcategory: subcategory,
         );
 
   factory ContestantModel.fromJson(Map<String, dynamic> map) {
     return ContestantModel(
-      id: map[ContestantMap.id],
-      categoryID: map[ContestantMap.category],
-      subCategoryID: map[ContestantMap.subCategory],
-      photo: map[ContestantMap.photo],
-      name: map[ContestantMap.name],
-      description: map[ContestantMap.description],
-    );
+        id: map[ContestantMap.id],
+        categoryID: map[ContestantMap.category],
+        subCategoryID: map[ContestantMap.subCategory],
+        photo: map[ContestantMap.photo],
+        name: map[ContestantMap.name],
+        description: map[ContestantMap.description],
+        category: map['category'],
+        subcategory: map['sub_category']);
   }
 }
 

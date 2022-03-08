@@ -16,7 +16,7 @@ const String kADDRESS_NOT_FOUND =
     'Address coordinate not found. Please change address';
 
 // Paystack
-const String kSECRET = 'sk_live_73623f476746bb8e3cec456417e86f5162845f49';
+const String kSECRET = 'sk_live_6ee6d817edc08f2fa1e2e90aaafc4ed1b1179af7';
 // sk_live_73623f476746bb8e3cec456417e86f5162845f49
 
 const String kURL = 'https://ageofstyle.herokuapp.com/api';

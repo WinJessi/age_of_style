@@ -6,6 +6,7 @@ import 'package:age_of_style/features/domain/usecases/get_category.dart';
 import 'package:age_of_style/features/domain/usecases/get_contestants.dart';
 import 'package:age_of_style/features/domain/usecases/get_sub.dart';
 import 'package:age_of_style/features/domain/usecases/init_payment.dart';
+import 'package:age_of_style/features/domain/usecases/save_voters.dart';
 import 'package:age_of_style/features/domain/usecases/settings.dart';
 import 'package:age_of_style/features/domain/usecases/verify_payment.dart';
 import 'package:age_of_style/features/domain/usecases/vote.dart';
@@ -41,6 +42,7 @@ Future<void> init() async {
       voteUsecase: getIt(),
       initPaymentUsecase: getIt(),
       verifyPaymentUsecase: getIt(),
+      saveVotersUsecase: getIt(),
     ),
   );
 
@@ -52,6 +54,7 @@ Future<void> init() async {
   getIt.registerLazySingleton(() => VoteUsecase(repository: getIt()));
   getIt.registerLazySingleton(() => InitPaymentUsecase(repository: getIt()));
   getIt.registerLazySingleton(() => VerifyPaymentUsecase(repository: getIt()));
+  getIt.registerLazySingleton(() => SaveVotersUsecase(repository: getIt()));
 
   //? Repository
   getIt.registerLazySingleton<MyRepository>(

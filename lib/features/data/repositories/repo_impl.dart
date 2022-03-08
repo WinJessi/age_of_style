@@ -178,4 +178,9 @@ class MyRepositoryImpl implements MyRepository {
       return Left(UnexpectedError());
     }
   }
+
+  @override
+  Future<void> saveVoter(Map map) async {
+    await remoteDatasource.saveVoter(map);
+  }
 }

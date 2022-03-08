@@ -1,6 +1,7 @@
 import 'package:age_of_style/config/routes/route_config.dart';
 import 'package:age_of_style/features/presentation/change-notifier/my_notifier.dart';
-import 'package:awesome_card/awesome_card.dart';
+import 'package:clipboard/clipboard.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
@@ -40,25 +41,25 @@ class _PlaceVoteState extends State<PlaceVote> {
             padding: const EdgeInsets.all(15),
             child: Wrap(
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 30, top: 15),
-                  child: Consumer<MyNotifier>(
-                    builder: (context, value, child) => CreditCard(
-                      cardNumber: value.card['card'],
-                      cardExpiry: value.card['exp'],
-                      cardHolderName: value.card['cvv'],
-                      bankName: "Powered by Paystack",
-                      cardType: CardType.masterCard,
-                      showBackSide: false,
-                      frontBackground: CardBackgrounds.black,
-                      backBackground: CardBackgrounds.white,
-                      showShadow: true,
-                      textExpDate: 'Exp. Date',
-                      textName: '',
-                      textExpiry: 'MM/YY',
-                    ),
-                  ),
-                ),
+                // Padding(
+                //   padding: const EdgeInsets.only(bottom: 30, top: 15),
+                //   child: Consumer<MyNotifier>(
+                //     builder: (context, value, child) => CreditCard(
+                //       cardNumber: value.card['card'],
+                //       cardExpiry: value.card['exp'],
+                //       cardHolderName: value.card['cvv'],
+                //       bankName: "Powered by Paystack",
+                //       cardType: CardType.masterCard,
+                //       showBackSide: false,
+                //       frontBackground: CardBackgrounds.black,
+                //       backBackground: CardBackgrounds.white,
+                //       showShadow: true,
+                //       textExpDate: 'Exp. Date',
+                //       textName: '',
+                //       textExpiry: 'MM/YY',
+                //     ),
+                //   ),
+                // ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: Column(
@@ -125,9 +126,7 @@ class _PlaceVoteState extends State<PlaceVote> {
                                     ),
                                     child: IconButton(
                                       padding: EdgeInsets.zero,
-                                      onPressed: value.response.isNotEmpty
-                                          ? null
-                                          : () => value.increase(),
+                                      onPressed: () => value.increase(),
                                       icon: const Icon(Icons.add),
                                     ),
                                   ),
@@ -152,9 +151,11 @@ class _PlaceVoteState extends State<PlaceVote> {
                       GestureDetector(
                         onTap: value.howMany < 1
                             ? null
-                            : value.response.isEmpty
-                                ? () => next(value.howMany)
-                                : () => verify(value.howMany),
+                            :
+                            // value.response.isEmpty
+                            //     ?
+                            () => next(value.howMany),
+                        // : () => verify(value.howMany),
                         child: Container(
                           width: 150,
                           height: 40,
@@ -171,12 +172,10 @@ class _PlaceVoteState extends State<PlaceVote> {
                             ],
                           ),
                           alignment: Alignment.center,
-                          child: value.isLoading
-                              ? const CircularProgressIndicator(strokeWidth: 1)
-                              : Text(
-                                  value.response.isEmpty ? 'NEXT' : 'CONFIRM',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
+                          child: const Text(
+                            'NEXT',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
                     ],
@@ -195,58 +194,75 @@ class _PlaceVoteState extends State<PlaceVote> {
   }
 
   void next(howMany) async {
+    Application.router.pop(context);
     var prov = Provider.of<MyNotifier>(context, listen: false);
 
-    prov.setIsLoading();
+    prov.vote(howMany);
 
-    prov.initPayemnt(howMany).then((value) => value.fold(
-          (l) => l,
-          (r) => launch(r['authorization_url']).then(
-            (_) => prov.setIsLoading(),
-          ).whenComplete(() => null),
-        ));
+    showDialog(
+      context: context,
+      builder: (context) => CardDetails(howMany: howMany),
+    ).then((_) {
+      prov.congrats();
+      prov.resetCount();
+    });
+
+    // prov.initPayemnt(howMany).then(
+    //       (value) => value.fold(
+    //         (l) => l,
+    //         (r) {
+    //           Application.router.pop(context);
+
+    //           launch(r['authorization_url'])
+    //               .then(
+    //                 (_) => prov.setIsLoading(),
+    //               )
+    //               .whenComplete(() => null);
+    //         },
+    //       ),
+    //     );
   }
 
-  void verify(howMany) async {
-    var prov = Provider.of<MyNotifier>(context, listen: false);
+  // void verify(howMany) async {
+  //   var prov = Provider.of<MyNotifier>(context, listen: false);
 
-    prov.setIsLoading();
+  //   prov.setIsLoading();
 
-    prov.verifyPayment().then(
-          (value) => value.fold(
-            (l) {
-              showSimpleNotification(Text(l));
-              prov.setIsLoading();
-            },
-            (r) {
-              if (r) {
-                prov.vote(howMany).then(
-                      (value) => value
-                          .fold((l) => showSimpleNotification(Text(l)), (r) {
-                        if (r) {
-                          Application.router.pop(context);
+  //   prov.verifyPayment().then(
+  //         (value) => value.fold(
+  //           (l) {
+  //             showSimpleNotification(Text(l));
+  //             prov.setIsLoading();
+  //           },
+  //           (r) {
+  //             if (r) {
+  //               prov.vote(howMany).then(
+  //                     (value) => value
+  //                         .fold((l) => showSimpleNotification(Text(l)), (r) {
+  //                       if (r) {
+  //                         Application.router.pop(context);
 
-                          showSimpleNotification(
-                            const Text(
-                              'Hooray! Voting successful. You can still vote more though',
-                            ),
-                            duration: const Duration(seconds: 7),
-                          );
+  //                         showSimpleNotification(
+  //                           const Text(
+  //                             'Hooray! Voting successful. You can still vote more though',
+  //                           ),
+  //                           duration: const Duration(seconds: 7),
+  //                         );
 
-                          prov.congrats();
-                        }
-                      }),
-                    );
-              } else {
-                showSimpleNotification(const Text('Payment failed'));
-                Application.router.pop(context);
-              }
+  //                         prov.congrats();
+  //                       }
+  //                     }),
+  //                   );
+  //             } else {
+  //               showSimpleNotification(const Text('Payment failed'));
+  //               Application.router.pop(context);
+  //             }
 
-              prov.setIsLoading();
-            },
-          ),
-        );
-  }
+  //             prov.setIsLoading();
+  //           },
+  //         ),
+  //       );
+  // }
 }
 
 class CardDetails extends StatefulWidget {
@@ -282,114 +298,245 @@ class _CardDetailsState extends State<CardDetails> {
           ),
           child: Container(
             padding: const EdgeInsets.all(15),
-            child: Form(
-              key: _form,
-              child: Wrap(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 5,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                Text(
+                  'How to Vote',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headline1!
+                      .copyWith(color: Colors.white),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Step 1:',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyText2!
+                          .copyWith(color: Colors.white),
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: TextFormField(
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          hintText: 'Card number',
-                          fillColor: Colors.transparent,
-                          filled: true,
-                          hintStyle: TextStyle(color: Colors.white54),
-                        ),
-                        keyboardType: TextInputType.number,
-                        onSaved: (v) => value.setCard('card', v),
-                        validator: (value) {
-                          if (value!.isEmpty) return 'Card number is required';
-                          if (value.length < 16) {
-                            return 'Incomplete card number';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 5,
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              style: const TextStyle(color: Colors.white),
-                              decoration: const InputDecoration(
-                                hintText: 'Exp',
-                                fillColor: Colors.transparent,
-                                filled: true,
-                                hintStyle: TextStyle(color: Colors.white54),
-                              ),
-                              keyboardType: TextInputType.number,
-                              onSaved: (v) => value.setCard('exp', v),
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return 'Expiry date is required';
-                                }
-                                return null;
-                              },
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Transfer ${value.howMany * 20}₦ to:',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
                             ),
-                          ),
-                          const SizedBox(width: 30),
-                          Expanded(
-                            child: TextFormField(
-                              style: const TextStyle(color: Colors.white),
-                              decoration: const InputDecoration(
-                                hintText: 'CVV',
-                                fillColor: Colors.transparent,
-                                filled: true,
-                                hintStyle: TextStyle(color: Colors.white54),
-                              ),
-                              keyboardType: TextInputType.number,
-                              onSaved: (v) => value.setCard('cvv', v),
-                              validator: (value) {
-                                if (value!.isEmpty) return 'CVV is required';
-                                if (value.length < 3) return 'Incomplete cvv';
-                                return null;
-                              },
+                            TextSpan(
+                              text: '\n Account no: ',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 15,
-                    ),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: MaterialButton(
-                        color: Colors.black,
-                        onPressed: () => process(),
-                        child: Text(
-                          'CONFIRM',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline1!
-                              .copyWith(color: Colors.white),
+                            TextSpan(
+                              text: '4800026618',
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () =>
+                                    FlutterClipboard.copy('4800026618').then(
+                                      (value) => showSimpleNotification(
+                                        const Text('account no copied'),
+                                      ),
+                                    ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                      color: Colors.red),
+                            ),
+                            TextSpan(
+                              text: '\n Account name: ',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            ),
+                            TextSpan(
+                              text: 'Ageofstyle',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            ),
+                            TextSpan(
+                              text: '\n Bank name: ',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            ),
+                            TextSpan(
+                              text: 'Ecobank',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            )
+                          ],
                         ),
                       ),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Step 2:',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyText2!
+                          .copyWith(color: Colors.white),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text:
+                                  'Once transfer is successful, kind send a screenshot of transaction with the following information attached',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            ),
+                            TextSpan(
+                              text: '\n\n* Nominee: ',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            ),
+                            TextSpan(
+                              text: '\n* Award Category ',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            ),
+                            TextSpan(
+                              text: '\n* Amount transfered ',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            ),
+                            TextSpan(
+                              text: '\n* no of votes ',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            ),
+                            TextSpan(
+                              text: '\n\nOR',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            ),
+                            TextSpan(
+                              text:
+                                  '\n\nCLICK TO COPY ABOVE INFORMATION AUTOMATICALLY',
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () => FlutterClipboard.copy(
+                                            'Nominee: ${value.selectedContestant.last.name} \nAward category: ${value.selectedContestant.last.subcategory} \nAmount transfered: ${value.howMany * 20}₦ \nVotes: ${value.howMany}')
+                                        .then(
+                                      (value) => showSimpleNotification(
+                                        const Text('information copied'),
+                                      ),
+                                    ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                      color: Colors.blue),
+                            ),
+                            TextSpan(
+                              text: '\n\nTo this whatsapp number ',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            ),
+                            TextSpan(
+                              text: ' +2348139076312',
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () =>
+                                    launch('https://wa.me/%2B2348139076312'),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                      color: Colors.blue),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Step 3:',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyText2!
+                          .copyWith(color: Colors.white),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text:
+                                  'Upon confirmation, you will receive a congratulatory message from Ageofstyle.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2!
+                                  .copyWith(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Please note for any category award to be produced at least one nominee in each category must have must attain at least 500 votes',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyText2!
+                      .copyWith(color: Colors.white),
+                )
+              ],
             ),
           ).asGlass(
             frosted: true,
-            tintColor: Colors.white,
+            tintColor: Colors.black,
             clipBorderRadius: BorderRadius.circular(15),
           ),
         ),
